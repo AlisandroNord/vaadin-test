@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.example.application.data.entity.SamplePerson;
+import com.example.application.data.entity.Client;
 import com.example.application.data.service.SamplePersonService;
 
 import com.vaadin.collaborationengine.CollaborationAvatarGroup;
@@ -44,7 +44,7 @@ public class AddView extends Div implements BeforeEnterObserver {
     private final String SAMPLEPERSON_ID = "samplePersonID";
     private final String SAMPLEPERSON_EDIT_ROUTE_TEMPLATE = "add/%d/edit";
 
-    private Grid<SamplePerson> grid = new Grid<>(SamplePerson.class, false);
+    private Grid<Client> grid = new Grid<>(Client.class, false);
 
     CollaborationAvatarGroup avatarGroup;
 
@@ -59,9 +59,9 @@ public class AddView extends Div implements BeforeEnterObserver {
     private Button cancel = new Button("Cancel");
     private Button save = new Button("Save");
 
-    private CollaborationBinder<SamplePerson> binder;
+    private CollaborationBinder<Client> binder;
 
-    private SamplePerson samplePerson;
+    private Client client;
 
     private SamplePersonService samplePersonService;
 
@@ -96,9 +96,9 @@ public class AddView extends Div implements BeforeEnterObserver {
         grid.addColumn("phone").setAutoWidth(true);
         grid.addColumn("dateOfBirth").setAutoWidth(true);
         grid.addColumn("occupation").setAutoWidth(true);
-        TemplateRenderer<SamplePerson> importantRenderer = TemplateRenderer.<SamplePerson>of(
+        TemplateRenderer<Client> importantRenderer = TemplateRenderer.<Client>of(
                 "<iron-icon hidden='[[!item.important]]' icon='vaadin:check' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: var(--lumo-primary-text-color);'></iron-icon><iron-icon hidden='[[item.important]]' icon='vaadin:minus' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: var(--lumo-disabled-text-color);'></iron-icon>")
-                .withProperty("important", SamplePerson::isImportant);
+                .withProperty("important", Client::isImportant);
         grid.addColumn(importantRenderer).setHeader("Important").setAutoWidth(true);
 
         grid.setDataProvider(new CrudServiceDataProvider<>(samplePersonService));
@@ -116,7 +116,7 @@ public class AddView extends Div implements BeforeEnterObserver {
         });
 
         // Configure Form
-        binder = new CollaborationBinder<>(SamplePerson.class, userInfo);
+        binder = new CollaborationBinder<>(Client.class, userInfo);
 
         // Bind fields. This where you'd define e.g. validation rules
 
@@ -129,12 +129,12 @@ public class AddView extends Div implements BeforeEnterObserver {
 
         save.addClickListener(e -> {
             try {
-                if (this.samplePerson == null) {
-                    this.samplePerson = new SamplePerson();
+                if (this.client == null) {
+                    this.client = new Client();
                 }
-                binder.writeBean(this.samplePerson);
+                binder.writeBean(this.client);
 
-                samplePersonService.update(this.samplePerson);
+                samplePersonService.update(this.client);
                 clearForm();
                 refreshGrid();
                 Notification.show("SamplePerson details stored.");
@@ -149,7 +149,7 @@ public class AddView extends Div implements BeforeEnterObserver {
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Integer> samplePersonId = event.getRouteParameters().getInteger(SAMPLEPERSON_ID);
         if (samplePersonId.isPresent()) {
-            Optional<SamplePerson> samplePersonFromBackend = samplePersonService.get(samplePersonId.get());
+            Optional<Client> samplePersonFromBackend = samplePersonService.get(samplePersonId.get());
             if (samplePersonFromBackend.isPresent()) {
                 populateForm(samplePersonFromBackend.get());
             } else {
@@ -221,16 +221,16 @@ public class AddView extends Div implements BeforeEnterObserver {
         populateForm(null);
     }
 
-    private void populateForm(SamplePerson value) {
-        this.samplePerson = value;
+    private void populateForm(Client value) {
+        this.client = value;
         String topic = null;
-        if (this.samplePerson != null && this.samplePerson.getId() != null) {
-            topic = "samplePerson/" + this.samplePerson.getId();
+        if (this.client != null && this.client.getId() != null) {
+            topic = "samplePerson/" + this.client.getId();
             avatarGroup.getStyle().set("visibility", "visible");
         } else {
             avatarGroup.getStyle().set("visibility", "hidden");
         }
-        binder.setTopic(topic, () -> this.samplePerson);
+        binder.setTopic(topic, () -> this.client);
         avatarGroup.setTopic(topic);
 
     }
