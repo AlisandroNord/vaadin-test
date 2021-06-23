@@ -18,11 +18,8 @@ import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
-import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.PageTitle;
-import com.example.application.views.MainLayout;
 import com.example.application.views.add.AddView;
-import com.example.application.views.list.ListView;
 import com.vaadin.flow.component.page.Push;
 
 /**
@@ -86,13 +83,13 @@ public class MainLayout extends AppLayout {
     }
 
     private Component[] createMenuItems() {
-        return new Tab[]{createTab("Add", AddView.class), createTab("List", ListView.class)};
+        return new Tab[]{createTab("Add")};
     }
 
-    private static Tab createTab(String text, Class<? extends Component> navigationTarget) {
+    private static Tab createTab(String text) {
         final Tab tab = new Tab();
-        tab.add(new RouterLink(text, navigationTarget));
-        ComponentUtil.setData(tab, Class.class, navigationTarget);
+        tab.add(new RouterLink(text, AddView.class));
+        ComponentUtil.setData(tab, Class.class, AddView.class);
         return tab;
     }
 

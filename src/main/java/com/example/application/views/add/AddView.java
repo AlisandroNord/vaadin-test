@@ -3,10 +3,10 @@ package com.example.application.views.add;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.example.application.data.service.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.example.application.data.entity.Client;
-import com.example.application.data.service.SamplePersonService;
 
 import com.vaadin.collaborationengine.CollaborationAvatarGroup;
 import com.vaadin.collaborationengine.CollaborationBinder;
@@ -16,7 +16,6 @@ import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -27,7 +26,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.TemplateRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -48,25 +46,24 @@ public class AddView extends Div implements BeforeEnterObserver {
 
     CollaborationAvatarGroup avatarGroup;
 
-    private TextField firstName;
-    private TextField lastName;
-    private TextField email;
+    private TextField name;
     private TextField phone;
+    private TextField email;
+    private TextField address;
     private DatePicker dateOfBirth;
-    private TextField occupation;
-    private Checkbox important;
 
     private Button cancel = new Button("Cancel");
     private Button save = new Button("Save");
+    private Button delete = new Button("Delete");
 
     private CollaborationBinder<Client> binder;
 
     private Client client;
 
-    private SamplePersonService samplePersonService;
+    private ClientService clientService;
 
-    public AddView(@Autowired SamplePersonService samplePersonService) {
-        this.samplePersonService = samplePersonService;
+    public AddView(@Autowired ClientService clientService) {
+        this.clientService = clientService;
         addClassNames("add-view", "flex", "flex-col", "h-full");
 
         // UserInfo is used by Collaboration Engine and is used to share details
@@ -90,18 +87,18 @@ public class AddView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configure Grid
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
+        grid.addColumn("id").setAutoWidth(true);
+        grid.addColumn("name").setAutoWidth(true);
         grid.addColumn("phone").setAutoWidth(true);
+        grid.addColumn("email").setAutoWidth(true);
+        grid.addColumn("address").setAutoWidth(true);
         grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        TemplateRenderer<Client> importantRenderer = TemplateRenderer.<Client>of(
+        /*TemplateRenderer<Client> importantRenderer = TemplateRenderer.<Client>of(
                 "<iron-icon hidden='[[!item.important]]' icon='vaadin:check' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: var(--lumo-primary-text-color);'></iron-icon><iron-icon hidden='[[item.important]]' icon='vaadin:minus' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: var(--lumo-disabled-text-color);'></iron-icon>")
                 .withProperty("important", Client::isImportant);
-        grid.addColumn(importantRenderer).setHeader("Important").setAutoWidth(true);
+        grid.addColumn(importantRenderer).setHeader("Important").setAutoWidth(true);*/
 
-        grid.setDataProvider(new CrudServiceDataProvider<>(samplePersonService));
+        grid.setDataProvider(new CrudServiceDataProvider<>(clientService));
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         grid.setHeightFull();
 
@@ -134,7 +131,7 @@ public class AddView extends Div implements BeforeEnterObserver {
                 }
                 binder.writeBean(this.client);
 
-                samplePersonService.update(this.client);
+                clientService.update(this.client);
                 clearForm();
                 refreshGrid();
                 Notification.show("SamplePerson details stored.");
@@ -143,13 +140,23 @@ public class AddView extends Div implements BeforeEnterObserver {
                 Notification.show("An exception happened while trying to store the samplePerson details.");
             }
         });
+        delete.addClickListener(e ->{
+            if(this.client != null){
+                clientService.delete(this.client.getId());
+                clearForm();
+                refreshGrid();
+                Notification.show("Client deleted");
+            } else {
+                Notification.show("Client is null");
+            }
+        });
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Integer> samplePersonId = event.getRouteParameters().getInteger(SAMPLEPERSON_ID);
         if (samplePersonId.isPresent()) {
-            Optional<Client> samplePersonFromBackend = samplePersonService.get(samplePersonId.get());
+            Optional<Client> samplePersonFromBackend = clientService.get(samplePersonId.get());
             if (samplePersonFromBackend.isPresent()) {
                 populateForm(samplePersonFromBackend.get());
             } else {
@@ -174,15 +181,12 @@ public class AddView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        firstName = new TextField("First Name");
-        lastName = new TextField("Last Name");
-        email = new TextField("Email");
+        name = new TextField("Name");
         phone = new TextField("Phone");
+        email = new TextField("Email");
+        address = new TextField("Address");
         dateOfBirth = new DatePicker("Date Of Birth");
-        occupation = new TextField("Occupation");
-        important = new Checkbox("Important");
-        important.getStyle().set("padding-top", "var(--lumo-space-m)");
-        Component[] fields = new Component[]{firstName, lastName, email, phone, dateOfBirth, occupation, important};
+        Component[] fields = new Component[]{name, phone, email, address, dateOfBirth};
 
         for (Component field : fields) {
             ((HasStyle) field).addClassName("full-width");
@@ -198,9 +202,10 @@ public class AddView extends Div implements BeforeEnterObserver {
         HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.setClassName("w-full flex-wrap bg-contrast-5 py-s px-l");
         buttonLayout.setSpacing(true);
+        delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
+        buttonLayout.add(save, cancel, delete);
         editorLayoutDiv.add(buttonLayout);
     }
 
